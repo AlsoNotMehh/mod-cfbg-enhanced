@@ -5,7 +5,7 @@
 #
 
 #############################
-# CFBG configuration system #
+# Battleground Faction Balance configuration system #
 #############################
 [worldserver]
 
@@ -61,11 +61,7 @@
 #       Default: "" - (no class skipped)
 #
 #   CFBG.Include.Avg.Ilvl.Enable
-#       Description: Enable check average item level for bg.
-#                    Only takes effect when CFBG.BalancedTeams = 0. When
-#                    CFBG.BalancedTeams = 1 the average item level is always
-#                    consulted as an intrinsic tiebreaker of the balancing
-#                    cascade, regardless of this setting.
+#       Description: Enable check average item level for bg
 #       Default: 0
 #
 #   CFBG.BalancedTeams
@@ -114,22 +110,18 @@
 #
 #   CFBG.BalanceTeamsOnEntry.Enabled
 #       Description: When a solo player enters a battleground while the teams are
-#                    uneven, move them to the smaller team according to the
-#                    invited counts at that moment (players inside plus accepted
-#                    or pending invitees still on their way). If the teams are
-#                    already even they keep the team chosen at invite time, and
-#                    grouped players are never moved.
+#                    uneven, move them to the smaller team according to the live
+#                    in-BG head counts at that moment. If the teams are already
+#                    even they keep the team chosen at invite time, and grouped
+#                    players are never moved.
 #       Default: 1 - (Enabled)
 #                0 - (Disabled)
 #
-#   CFBG.BalanceTeamsAtStart.Enabled
-#       Description: When the gates open, if declined or ignored invites left the
-#                    physical teams uneven by 2 or more, flip surplus entrants to
-#                    the smaller side so the match starts within 1 of even (e.g. a
-#                    4v1 opens 3v2). Real battleground premades are never split; a
-#                    solo player merely sitting in a social/questing party still
-#                    counts as flippable. Decisions use live head counts only, so
-#                    reservations that never showed up don't skew the repair.
+#   CFBG.GroupTeamLock.Enabled
+#       Description: Preserve the invite-time faction assigned to queued parties
+#                    until they fully enter the battleground. This prevents
+#                    grouped friends from being split across opposite factions by
+#                    a later live-entry rebalance pass.
 #       Default: 1 - (Enabled)
 #                0 - (Disabled)
 
@@ -152,4 +144,4 @@ CFBG.ResetCooldowns = 0
 CFBG.Show.PlayerName = 0
 CFBG.RandomRaceSelection = 1
 CFBG.BalanceTeamsOnEntry.Enabled = 1
-CFBG.BalanceTeamsAtStart.Enabled = 1
+CFBG.GroupTeamLock.Enabled = 1

@@ -46,6 +46,7 @@ enum FakeMorphs
 
 constexpr auto FACTION_FROSTWOLF_CLAN = 729;
 constexpr auto FACTION_STORMPIKE_GUARD = 730;
+constexpr char BG_FACTION_BALANCE_SETTINGS_KEY[] = "mod-bg-faction-balance";
 
 // Cfbg settings
 constexpr auto SETTING_CFBG_RACE = 0;
@@ -99,7 +100,7 @@ struct TeamBalanceContext
 {
     int32  countA{ 0 };               // head counts, candidate EXCLUDED
     int32  countH{ 0 };
-    uint32 levelSumA{ 0 };            // level sums, candidate EXCLUDED (like the counts)
+    uint32 levelSumA{ 0 };            // candidate level ALREADY folded into its side
     uint32 levelSumH{ 0 };
     uint32 avgIlvlA{ 0 };            // per-team ilvl metric (bg avg OR queue sum)
     uint32 avgIlvlH{ 0 };
@@ -131,7 +132,7 @@ public:
     inline bool IsEnableEvenTeams() const { return _IsEnableEvenTeams; }
     inline bool IsEnableResetCooldowns() const { return _IsEnableResetCooldowns; }
     inline bool IsEnableBalanceTeamsOnEntry() const { return _IsEnableBalanceTeamsOnEntry; }
-    inline bool IsEnableBalanceTeamsAtStart() const { return _IsEnableBalanceTeamsAtStart; }
+    inline bool IsEnableGroupTeamLock() const { return _IsEnableGroupTeamLock; }
     inline uint32 EvenTeamsMaxPlayersThreshold() const { return _EvenTeamsMaxPlayersThreshold; }
     inline uint32 GetMaxPlayersCountInGroup() const { return _MaxPlayersCountInGroup; }
     inline uint8 GetBalanceClassMinLevel() const { return _balanceClassMinLevel; }
@@ -144,6 +145,7 @@ public:
 
     TeamId ResolveBalancedTeam(TeamBalanceContext const& ctx);
 
+    bool SendRealNameQuery(Player* player);
     bool IsPlayerFake(Player* player);
     FakePlayer const* GetFakePlayer(Player* player) const;
 
@@ -152,40 +154,34 @@ public:
     std::optional<TeamId> GetWGWarAssignment(ObjectGuid guid) const;
     void SetWGWarAssignment(ObjectGuid guid, TeamId team);
     void ClearWGWarAssignments();
+    std::optional<TeamId> GetQueuedGroupTeamAssignment(ObjectGuid guid) const;
+    void SetQueuedGroupTeamAssignment(GroupQueueInfo* groupInfo, TeamId team);
+    void ClearQueuedGroupTeamAssignment(ObjectGuid guid);
+    void ClearQueuedGroupTeamAssignment(GroupQueueInfo* groupInfo);
 
     // Native-priority WG balancing: keep the minority native, flip only the
-    // majority's surplus (latest accepters). The fair share is a ceiling; past
-    // it a majority joiner flips only when the flip does not worsen the live
-    // war counts. Census captured on the first call of a war, reset in
-    // ClearWGWarAssignments.
-    TeamId ResolveWGWarTeam(Player* player, uint32 nativeAllianceInvited, uint32 nativeHordeInvited, uint32 allianceInWar, uint32 hordeInWar);
+    // majority's surplus (latest accepters). Census captured on the first call
+    // of a war, reset in ClearWGWarAssignments.
+    TeamId ResolveWGWarTeam(Player* player, uint32 nativeAllianceInvited, uint32 nativeHordeInvited);
 
+    bool ShouldForgetInListPlayers(Player* player);
     bool IsPlayingNative(Player* player);
 
     void ValidatePlayerForBG(Battleground* bg, Player* player);
     // Forces race/faction/m_team/fake-store into agreement with the player's
     // assigned BG team (GetBgTeamId()); idempotent and self-correcting.
     void EnforceBGTeamConsistency(Player* player);
-
-    // Doors-open head-count repair: when declined/no-show invites left the teams
-    // grossly uneven (diff >= 2) once the gates open, flip surplus solo entrants
-    // to the smaller side so the match starts within 1 of even. Real BG premades
-    // are never split. Fired from OnBattlegroundStart.
-    void BalanceTeamsAtStart(Battleground* bg);
     void SetFakeRaceAndMorph(Player* player);
     void SetFakeRaceAndMorphForBF(Player* player, TeamId assignedTeam);
     void SetFactionForRace(Player* player, uint8 Race, TeamId teamId);
     void ClearFakePlayer(Player* player);
-    void DropFakePlayerRecord(Player* player);
     void ReapplyFakePlayer(Player* player);
-    void FitPlayerInTeam(Player* player, Battleground* bg);
+    void DoForgetPlayersInList(Player* player);
+    void FitPlayerInTeam(Player* player, bool action, Battleground* bg);
     void DoForgetPlayersInBG(Player* player, Battleground* bg);
     void SetForgetBGPlayers(Player* player, bool value);
     bool ShouldForgetBGPlayers(Player* player);
-    // Const, non-inserting flag probe for the per-tick update hook
-    // (ShouldForgetBGPlayers' operator[] would default-insert an entry for
-    // every online player every tick).
-    bool HasPendingForget(Player* player) const;
+    void SetForgetInListPlayers(Player* player, bool value);
     void UpdateForget(Player* player);
     void SendMessageQueue(BattlegroundQueue* bgQueue, Battleground* bg, PvPDifficultyEntry const* bracketEntry, Player* leader);
 
@@ -209,13 +205,6 @@ private:
     // Arrival-time head-count correction for solo entrants.
     void BalanceTeamsOnEntry(Battleground* bg, Player* player);
 
-    // True when another member of `player`'s social party is already committed to
-    // this bg instance (already entered, or holding an invite to it). Flipping the
-    // player would then split a real premade that is materializing here, so the
-    // head-count repairs leave them put. `group` is the social party: GetGroup()
-    // before the BG raid is assigned (entry hook), GetOriginalGroup() once inside.
-    bool IsPartyCommittedToBG(Player* player, Group* group, Battleground* bg);
-
     RandomSkinInfo GetRandomRaceMorph(TeamId team, uint8 playerClass, uint8 gender);
 
     uint32 GetMorphFromRace(uint8 race, uint8 gender);
@@ -230,21 +219,21 @@ private:
 
     std::unordered_map<Player*, FakePlayer> _fakePlayerStore;
     std::unordered_map<ObjectGuid, TeamId> _wgWarAssignmentStore;
+    std::unordered_map<ObjectGuid, TeamId> _queuedGroupTeamAssignmentStore;
 
     // Per-war native census for ResolveWGWarTeam, reset in ClearWGWarAssignments.
     bool   _wgCensusValid        = false;
     TeamId _wgMajorityTeam       = TEAM_ALLIANCE;
     uint32 _wgMajorityFairShare  = 0;
     uint32 _wgMajorityNativeKept = 0;
+    std::unordered_map<Player*, ObjectGuid> _fakeNamePlayersStore;
     std::unordered_map<Player*, bool> _forgetBGPlayersStore;
+    std::unordered_map<Player*, bool> _forgetInListPlayersStore;
 
     std::array<RaceData, 12> _raceData{};
     std::array<CFBGRaceInfo, 9> _raceInfo{};
 
-    // For config
-    // = false so LoadConfig's disable-transition read is well-defined on the
-    // very first load.
-    bool _IsEnableSystem = false;
+        bool _IsEnableSystem;
     bool _IsEnableWGSystem;
     bool _IsEnableWGTeamLock;
     bool _IsEnableWGNativePriority;
@@ -256,7 +245,7 @@ private:
     bool _IsEnableEvenTeams;
     bool _IsEnableResetCooldowns;
     bool _IsEnableBalanceTeamsOnEntry;
-    bool _IsEnableBalanceTeamsAtStart;
+    bool _IsEnableGroupTeamLock;
     bool _showPlayerName;
     bool _randomizeRaces;
     uint32 _EvenTeamsMaxPlayersThreshold;
@@ -276,4 +265,4 @@ private:
 
 #define sCFBG CFBG::instance()
 
-#endif // _KARGATUM_CFBG_H_
+#endif // _CFBG_H_

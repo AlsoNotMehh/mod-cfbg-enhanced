@@ -85,7 +85,7 @@ public:
             }
         }
 
-        player->UpdatePlayerSetting("mod-cfbg", SETTING_CFBG_RACE, raceId);
+        player->UpdatePlayerSetting(BG_FACTION_BALANCE_SETTINGS_KEY, SETTING_CFBG_RACE, raceId);
 
         if (!raceId)
         {
@@ -129,8 +129,9 @@ public:
         bool const isFake     = sCFBG->IsPlayerFake(target);
         bool const native     = sCFBG->IsPlayingNative(target);
         bool const forgetBG   = sCFBG->ShouldForgetBGPlayers(target);
+        bool const forgetList = sCFBG->ShouldForgetInListPlayers(target);
         bool const inBG       = target->InBattleground();
-        uint8 const preferredRace = target->GetPlayerSetting("mod-cfbg", SETTING_CFBG_RACE).value;
+        uint8 const preferredRace = target->GetPlayerSetting(BG_FACTION_BALANCE_SETTINGS_KEY, SETTING_CFBG_RACE).value;
         FakePlayer const* fake = sCFBG->GetFakePlayer(target);
 
         // === Header ===
@@ -160,6 +161,7 @@ public:
             uint32(target->getClass()), uint32(target->getGender()));
         handler->PSendSysMessage("    Preferred race     {}", uint32(preferredRace));
         handler->PSendSysMessage("    Forget BG players  {}", YesNo(forgetBG));
+        handler->PSendSysMessage("    Forget in list     {}", YesNo(forgetList));
 
         // === Fake record ===
         if (fake)

@@ -1,16 +1,13 @@
 /*
- * Copyright (С) since 2019 Andrei Guluaev (Winfidonarleyan/Kargatum) https://github.com/Winfidonarleyan
- * Copyright (С) since 2019+ AzerothCore <www.azerothcore.org>
- * Licence MIT https://opensource.org/MIT
+ * Copyright (C) since 2019+ AzerothCore <www.azerothcore.org>
+ * License: MIT
  */
 
-// From SC
 void AddSC_CFBG();
 void AddSC_cfbg_commandscript();
 void AddSC_cfbg_bf_commandscript();
 
-// Add all
-void Addmod_cfbgScripts()
+void Addmod_cfbg_enhancedScripts()
 {
     AddSC_CFBG();
     AddSC_cfbg_commandscript();
