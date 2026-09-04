@@ -92,37 +92,37 @@ CFBG* CFBG::instance()
 
 void CFBG::LoadConfig()
 {
-    _IsEnableSystem = sConfigMgr->GetOption<bool>("CFBG.Enable", false);
+    _IsEnableSystem = sConfigMgr->GetOption<bool>("CFBG.Enable", false, false);
     if (!_IsEnableSystem)
         return;
 
-    _IsEnableWGSystem = sConfigMgr->GetOption<bool>("CFBG.Battlefield.Enable", true);
-    _IsEnableWGTeamLock = sConfigMgr->GetOption<bool>("CFBG.Battlefield.TeamLock.Enable", true);
-    _IsEnableWGNativePriority = sConfigMgr->GetOption<bool>("CFBG.Battlefield.NativePriority.Enable", true);
-    _IsEnableWGReapplyOnResurrect = sConfigMgr->GetOption<bool>("CFBG.Battlefield.ReapplyOnResurrect.Enable", true);
+    _IsEnableWGSystem = sConfigMgr->GetOption<bool>("CFBG.Battlefield.Enable", true, false);
+    _IsEnableWGTeamLock = sConfigMgr->GetOption<bool>("CFBG.Battlefield.TeamLock.Enable", true, false);
+    _IsEnableWGNativePriority = sConfigMgr->GetOption<bool>("CFBG.Battlefield.NativePriority.Enable", true, false);
+    _IsEnableWGReapplyOnResurrect = sConfigMgr->GetOption<bool>("CFBG.Battlefield.ReapplyOnResurrect.Enable", true, false);
 
     _wgSkipClasses.clear();
-    std::string const skipClasses = sConfigMgr->GetOption<std::string>("CFBG.Battlefield.SkipClasses", "");
+    std::string const skipClasses = sConfigMgr->GetOption<std::string>("CFBG.Battlefield.SkipClasses", "", false);
     for (auto const& token : Acore::Tokenize(skipClasses, ',', false))
     {
         if (Optional<uint8> playerClass = Acore::StringTo<uint8>(token))
             _wgSkipClasses.insert(*playerClass);
     }
 
-    _IsEnableAvgIlvl = sConfigMgr->GetOption<bool>("CFBG.Include.Avg.Ilvl.Enable", false);
-    _IsEnableBalancedTeams = sConfigMgr->GetOption<bool>("CFBG.BalancedTeams", false);
-    _IsEnableEvenTeams = sConfigMgr->GetOption<bool>("CFBG.EvenTeams.Enabled", false);
-    _IsEnableBalanceClassLowLevel = sConfigMgr->GetOption<bool>("CFBG.BalancedTeams.Class.LowLevel", true);
-    _IsEnableResetCooldowns = sConfigMgr->GetOption<bool>("CFBG.ResetCooldowns", false);
-    _IsEnableBalanceTeamsOnEntry = sConfigMgr->GetOption<bool>("CFBG.BalanceTeamsOnEntry.Enabled", true);
-    _IsEnableGroupTeamLock = sConfigMgr->GetOption<bool>("CFBG.GroupTeamLock.Enabled", true);
-    _showPlayerName = sConfigMgr->GetOption<bool>("CFBG.Show.PlayerName", false);
-    _EvenTeamsMaxPlayersThreshold = sConfigMgr->GetOption<uint32>("CFBG.EvenTeams.MaxPlayersThreshold", 0);
-    _MaxPlayersCountInGroup = sConfigMgr->GetOption<uint32>("CFBG.Players.Count.In.Group", 3);
-    _balanceClassMinLevel = sConfigMgr->GetOption<uint8>("CFBG.BalancedTeams.Class.MinLevel", 10);
-    _balanceClassMaxLevel = sConfigMgr->GetOption<uint8>("CFBG.BalancedTeams.Class.MaxLevel", 19);
-    _balanceClassLevelDiff = sConfigMgr->GetOption<uint8>("CFBG.BalancedTeams.Class.LevelDiff", 2);
-    _randomizeRaces = sConfigMgr->GetOption<bool>("CFBG.RandomRaceSelection", true);
+    _IsEnableAvgIlvl = sConfigMgr->GetOption<bool>("CFBG.Include.Avg.Ilvl.Enable", false, false);
+    _IsEnableBalancedTeams = sConfigMgr->GetOption<bool>("CFBG.BalancedTeams", false, false);
+    _IsEnableEvenTeams = sConfigMgr->GetOption<bool>("CFBG.EvenTeams.Enabled", false, false);
+    _IsEnableBalanceClassLowLevel = sConfigMgr->GetOption<bool>("CFBG.BalancedTeams.Class.LowLevel", true, false);
+    _IsEnableResetCooldowns = sConfigMgr->GetOption<bool>("CFBG.ResetCooldowns", false, false);
+    _IsEnableBalanceTeamsOnEntry = sConfigMgr->GetOption<bool>("CFBG.BalanceTeamsOnEntry.Enabled", true, false);
+    _IsEnableGroupTeamLock = sConfigMgr->GetOption<bool>("CFBG.GroupTeamLock.Enabled", true, false);
+    _showPlayerName = sConfigMgr->GetOption<bool>("CFBG.Show.PlayerName", false, false);
+    _EvenTeamsMaxPlayersThreshold = sConfigMgr->GetOption<uint32>("CFBG.EvenTeams.MaxPlayersThreshold", 0, false);
+    _MaxPlayersCountInGroup = sConfigMgr->GetOption<uint32>("CFBG.Players.Count.In.Group", 3, false);
+    _balanceClassMinLevel = sConfigMgr->GetOption<uint8>("CFBG.BalancedTeams.Class.MinLevel", 10, false);
+    _balanceClassMaxLevel = sConfigMgr->GetOption<uint8>("CFBG.BalancedTeams.Class.MaxLevel", 19, false);
+    _balanceClassLevelDiff = sConfigMgr->GetOption<uint8>("CFBG.BalancedTeams.Class.LevelDiff", 2, false);
+    _randomizeRaces = sConfigMgr->GetOption<bool>("CFBG.RandomRaceSelection", true, false);
 }
 
 uint32 CFBG::GetBGTeamAverageItemLevel(Battleground* bg, TeamId team)
